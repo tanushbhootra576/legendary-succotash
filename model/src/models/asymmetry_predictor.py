@@ -4,7 +4,8 @@ import src.models.model  # Import to register the embed function
 
 class FacialAsymmetryPredictor:
     def __init__(self, model_path="models/facial_asymmetry.keras"):
-        self.model = tf.keras.models.load_model(model_path)
+        # Enable loading of Lambda layers - safe because we trust our own model
+        self.model = tf.keras.models.load_model(model_path, safe_mode=False)
 
     def predict(self, left_face, right_face):
         """

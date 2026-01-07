@@ -63,9 +63,26 @@ Source code for the model pipeline, feature extraction, and utilities.
 
 ## Usage
 
-To run the test pipeline:
+### Installation
+
+Install the required dependencies:
+
 ```bash
-python src/test_pipeline.py
+pip install -r requirements.txt
+```
+
+### Running the Pipeline
+
+To run the test pipeline:
+
+```bash
+python main.py
+```
+
+Or run as a module:
+
+```bash
+python -m src.test_pipeline
 ```
 
 For testing scripts, run them from the model directory:

@@ -1,26 +1,79 @@
+import os
 import cv2
 import numpy as np
-from src.video.face_crop import extract_face
-from src.features.face_split import split_face
-from src.models.asymmetry_predictor import FacialAsymmetryPredictor
+import tensorflow as tf
 
-predictor = FacialAsymmetryPredictor()
+print("=== test_sensitivity.py STARTED ===")
 
-cap = cv2.VideoCapture("data/processed/clips/.mp4")
-ret, frame = cap.read()
-cap.release()
 
-face = extract_face(frame)
-left, right = split_face(face)
+# --------------------------------
+# Custom layer (MUST match save.py)
+# --------------------------------
+@tf.keras.utils.register_keras_serializable()
+class AbsDiffLayer(tf.keras.layers.Layer):
+    def call(self, inputs):
+        left, right = inputs
+        return tf.abs(left - right)
 
-# Original
-base_score = predictor.predict(left, right)
+    def get_config(self):
+        return super().get_config()
 
-# Artificial asymmetry: shift right face
-shifted = np.roll(right, shift=15, axis=1)
-shifted_score = predictor.predict(left, shifted)
 
-print("Original score:", base_score)
-print("Shifted score:", shifted_score)
+# --------------------------------
+# Facial Asymmetry Predictor
+# --------------------------------
+class FacialAsymmetryPredictor:
+    def __init__(self, model_path=None):
+        if model_path is None:
+            model_path = "models/facial_asymmetry.h5"
 
-#Todo: Add more systematic sensitivity 
+        if not os.path.exists(model_path):
+            raise FileNotFoundError(f"Model not found at: {model_path}")
+
+        self.model = tf.keras.models.load_model(
+            model_path,
+            custom_objects={"AbsDiffLayer": AbsDiffLayer}
+        )
+
+        print("✅ Asymmetry model loaded successfully")
+
+    def preprocess(self, img):
+        img = cv2.resize(img, (224, 224))
+        img = img.astype(np.float32) / 255.0
+        return np.expand_dims(img, axis=0)
+
+    def predict(self, left_face, right_face):
+        left = self.preprocess(left_face)
+        right = self.preprocess(right_face)
+        score = self.model.predict([left, right], verbose=0)
+        return float(score[0][0])
+
+
+# --------------------------------
+# SENSITIVITY TEST
+# --------------------------------
+def test_sensitivity():
+    predictor = FacialAsymmetryPredictor()
+
+    # base face
+    base_face = np.ones((224, 224, 3), dtype=np.uint8) * 128
+
+    # slightly modified face
+    modified_face = base_face.copy()
+    modified_face[100:120, 100:120] += 10  # small perturbation
+
+    score_base = predictor.predict(base_face, base_face)
+    score_modified = predictor.predict(base_face, modified_face)
+
+    print("Base score     :", score_base)
+    print("Modified score :", score_modified)
+
+    delta = abs(score_base - score_modified)
+    print("Score delta    :", delta)
+
+    assert delta > 0, "❌ Sensitivity test FAILED (model not reacting)"
+    print("✅ Sensitivity test PASSED")
+
+
+if __name__ == "__main__":
+    test_sensitivity()

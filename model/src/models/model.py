@@ -33,12 +33,13 @@ def build_facial_asymmetry_model():
     right_face = Input(shape=(224, 224, 3), name="right_face")
 
     # Embeddings
-    emb_left = Lambda(embed, name="left_embedding")(left_face)
-    emb_right = Lambda(embed, name="right_embedding")(right_face)
+    emb_left = Lambda(embed, output_shape=(1280,), name="left_embedding")(left_face)
+    emb_right = Lambda(embed, output_shape=(1280,), name="right_embedding")(right_face)
 
     # Deviation score
     deviation = Lambda(
         lambda tensors: tf.norm(tensors[0] - tensors[1], axis=1),
+        output_shape=(1,),
         name="deviation_score"
     )([emb_left, emb_right])
 

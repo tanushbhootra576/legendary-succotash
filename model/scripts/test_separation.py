@@ -1,3 +1,9 @@
+import os
+os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+import warnings
+warnings.filterwarnings('ignore', category=FutureWarning)
+
 import tensorflow as tf
 from tensorflow import keras
 from tensorflow.keras import layers
@@ -29,3 +35,9 @@ def build_model(input_shape=(224, 224, 3)):
 
     model = keras.Model(inputs, outputs)
     return model
+
+
+if __name__ == "__main__":
+    model = build_model()
+    model.summary()
+    print("✅ Model built successfully")

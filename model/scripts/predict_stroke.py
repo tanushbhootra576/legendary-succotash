@@ -2,10 +2,6 @@ import os
 import cv2
 import numpy as np
 import tensorflow as tf
-import keras
-
-# Enable unsafe deserialization for Lambda layers
-keras.config.enable_unsafe_deserialization()
 
 # --------------------------------
 # Custom layer (must match save.py)
@@ -39,8 +35,7 @@ class FacialAsymmetryPredictor:
 
         self.model = tf.keras.models.load_model(
             model_path,
-            custom_objects={"AbsDiffLayer": AbsDiffLayer, "embed": embed},
-            safe_mode=False
+            custom_objects={"AbsDiffLayer": AbsDiffLayer, "embed": embed}
         )
 
         print("Asymmetry model loaded successfully")
@@ -65,7 +60,9 @@ def main():
     predictor = FacialAsymmetryPredictor()
 
     # Load face detection cascade
-    face_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + 'haarcascade_frontalface_default.xml')
+    face_cascade = cv2.CascadeClassifier(
+        cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
+    )
 
     # Start video capture
     cap = cv2.VideoCapture(0)
@@ -102,13 +99,21 @@ def main():
             percentage = score * 100
 
             # Print to console
-            print(f"Stroke risk: {percentage:.2f}%")
+            print(f"Asymmetry Score: {percentage:.2f}%")
 
             # Draw rectangle around face
             cv2.rectangle(frame, (x, y), (x+w, y+h), (255, 0, 0), 2)
 
             # Display percentage on frame
-            cv2.putText(frame, f"Risk: {percentage:.2f}%", (x, y-10), cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 0, 0), 2)
+            cv2.putText(
+                frame,
+                f"Asymmetry: {percentage:.2f}%",
+                (x, y-10),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.9,
+                (255, 0, 0),
+                2
+            )
 
         # Show the frame
         cv2.imshow('Facial Asymmetry Detection', frame)
@@ -124,3 +129,5 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
